@@ -143,3 +143,4 @@ server.listen(PORT, '0.0.0.0', () => {
   console.log('WebSocket URL:', `ws://localhost:${PORT}?bot_id=test&connection_type=recall`);
   console.log('='.repeat(60));
   console.log('\nWaiting for Recall.ai bot to connect...\n');
+});
