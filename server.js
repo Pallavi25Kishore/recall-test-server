@@ -5,6 +5,9 @@ import { createServer } from 'http';
 const app = express();
 const PORT = process.env.PORT || 3789;
 
+// Enable trust proxy for Render
+app.set('trust proxy', true);
+
 // Basic health check endpoint
 app.get('/health', (req, res) => {
   res.json({
@@ -14,14 +17,29 @@ app.get('/health', (req, res) => {
   });
 });
 
+// WebSocket test endpoint
+app.get('/ws-test', (req, res) => {
+  res.json({
+    message: 'WebSocket endpoint is available',
+    url: `wss://${req.get('host')}?bot_id=99&connection_type=recall`
+  });
+});
+
 // Create HTTP server
 const server = createServer(app);
 
-// Create WebSocket server
+// Create WebSocket server with more permissive settings
 const wss = new WebSocketServer({
   server,
   // Accept all origins for testing
-  verifyClient: () => true
+  verifyClient: (info, callback) => {
+    console.log('🔍 WebSocket verification request:', {
+      origin: info.origin,
+      secure: info.secure,
+      url: info.req.url
+    });
+    callback(true); // Accept all connections
+  }
 });
 
 wss.on('connection', (ws, req) => {
@@ -38,6 +56,7 @@ wss.on('connection', (ws, req) => {
   console.log('Full URL:', req.url);
   console.log('Origin:', req.headers.origin || 'NOT PROVIDED');
   console.log('User-Agent:', req.headers['user-agent'] || 'NOT PROVIDED');
+  console.log('X-Forwarded-For:', req.headers['x-forwarded-for'] || 'NOT PROVIDED');
   console.log('='.repeat(60));
 
   // Track message count
@@ -110,7 +129,12 @@ wss.on('connection', (ws, req) => {
   }));
 });
 
-server.listen(PORT, () => {
+// Add error handling for WebSocket server
+wss.on('error', (error) => {
+  console.error('❌ WebSocket Server Error:', error);
+});
+
+server.listen(PORT, '0.0.0.0', () => {
   console.log('\n' + '='.repeat(60));
   console.log('🚀 Recall.ai Test WebSocket Server Started');
   console.log('='.repeat(60));
