@@ -68,7 +68,7 @@ wss.on('connection', (ws, req) => {
     messageCount++;
 
     try {
-      // Try to parse as JSON first
+      // Try to parse as JSON
       const parsed = JSON.parse(data.toString());
 
       // Log every 10 messages or if it's been more than 5 seconds
@@ -76,7 +76,7 @@ wss.on('connection', (ws, req) => {
       const shouldLog = messageCount % 10 === 0 || (now - lastLogTime) > 5000;
 
       if (shouldLog) {
-        console.log(`\n📨 Message #${messageCount} received (JSON)`);
+        console.log(`\n📨 Message #${messageCount} received`);
         console.log('Event type:', parsed.event || parsed.type || 'UNKNOWN');
 
         // Check if it's audio data
@@ -98,30 +98,9 @@ wss.on('connection', (ws, req) => {
         lastLogTime = now;
       }
     } catch (e) {
-      // Not JSON, likely binary data
-      const now = Date.now();
-      const shouldLog = messageCount % 10 === 0 || (now - lastLogTime) > 5000;
-
-      if (shouldLog || data.length > 1000) {
-        console.log(`\n📨 Message #${messageCount} (BINARY)`);
-        console.log('Size:', data.length, 'bytes');
-
-        // If it's a large binary message, it's likely audio
-        if (data.length > 1000) {
-          audioMessageCount++;
-          console.log('🎤 LIKELY AUDIO DATA:');
-          console.log('  - Audio message #:', audioMessageCount);
-          console.log('  - Raw audio buffer size:', data.length);
-
-          // Show first few bytes as hex for debugging
-          const preview = Buffer.isBuffer(data)
-            ? data.slice(0, 32).toString('hex')
-            : Buffer.from(data).slice(0, 32).toString('hex');
-          console.log('  - First 32 bytes (hex):', preview);
-        }
-
-        lastLogTime = now;
-      }
+      // Not JSON, might be binary
+      console.log(`\n📨 Message #${messageCount} (binary/non-JSON)`);
+      console.log('Size:', data.length, 'bytes');
     }
   });
 
@@ -164,4 +143,3 @@ server.listen(PORT, '0.0.0.0', () => {
   console.log('WebSocket URL:', `ws://localhost:${PORT}?bot_id=test&connection_type=recall`);
   console.log('='.repeat(60));
   console.log('\nWaiting for Recall.ai bot to connect...\n');
-});
